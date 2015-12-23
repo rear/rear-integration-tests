@@ -1,0 +1,15 @@
+= Automated Relax-and-Recover testing
+
+The purpose of this project is to create Ansible playbooks to perform
+automated backup and restore tests for different Linux distributions.
+
+Three different sets of playbooks are considered:
+
+ - Playbooks to create Linux images
+ - Playbooks to set up infrastructure (e.g. NFS server, rsync server)
+ - Playbooks to test specific backup and restore methods
+
+At the moment this project only includes the build of a minimal CentOS 7
+VM image, to be used as the basis for the other 2 playbooks.
+
+More to come...
