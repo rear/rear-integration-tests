@@ -1,0 +1,172 @@
+---
+- name: Ugly workaround for delegate_to bug in Ansible v1.8.4
+  hosts: hypervisor
+  remote_user: root
+  gather_facts: no
+
+  tasks:
+  - setup:
+
+- name: Create virtual images for Workshop
+  hosts: os-centos7
+  remote_user: root
+  gather_facts: no
+
+  vars:
+    os_name: centos
+    os_version: 7
+    os_arch: x86_64
+    centos_mirror: http://centos.cu.be/
+    image_dir: /var/lib/libvirt/images
+
+  vars_files:
+    - ../ssh-keys.yml
+
+  tasks:
+  - name: Revoke old keys
+    command: ssh-keygen -R {{ ansible_ssh_host }}
+    transport: local
+
+  - name: Create temporary directory
+    command: mktemp -d /tmp/workshop.XXXXXXXXXX
+    transport: local
+    register: tempdir
+
+  - name: Template kickstart file
+    template:
+      src: centos7/ks.cfg
+      dest: '{{ tempdir.stdout }}/ks.cfg'
+    transport: local
+
+  - name: Template syslinux bootloader config
+    template:
+      src: centos7/isolinux.cfg
+      dest: '{{ tempdir.stdout }}/isolinux.cfg'
+    transport: local
+
+  - name: Download boot images
+    get_url:
+      url: '{{ centos_mirror }}/{{ os_version }}/os/{{ os_arch }}/{{ item }}'
+      dest: '{{ tempdir.stdout }}'
+    transport: local
+    with_items:
+    - images/pxeboot/vmlinuz
+    - images/pxeboot/initrd.img
+    - isolinux/isolinux.bin
+
+  - name: Create ISO boot image
+    command: mkisofs -r -N -allow-leading-dots -d -J -T -b isolinux.bin -c boot.cat -no-emul-boot -V "Ansible workshop" -boot-load-size 4 -boot-info-table -o boot.iso {{ tempdir.stdout }}
+    transport: local
+
+  - name: Copy boot.iso to hypervisor
+    copy:
+      src: boot.iso
+      dest: '{{ image_dir }}/vm-noname.iso'
+    delegate_to: hypervisor
+
+  - name: Template VM configuration
+    template:
+      src: vm.xml
+      dest: '{{ tempdir.stdout }}/{{ inventory_hostname }}.xml'
+    delegate_to: hypervisor
+
+  - name: Allocate storage
+    qemu_img:
+      dest: '{{ image_dir }}/{{ inventory_hostname }}.qcow2'
+      size: 3072
+      format: qcow2
+    delegate_to: hypervisor
+
+  - name: Create the VM
+    virt_guest:
+      guest: '{{ inventory_hostname }}'
+      src: '{{ tempdir.stdout }}/{{ inventory_hostname }}.xml'
+    delegate_to: hypervisor
+
+  - name: Boot VM using boot ISO
+    virt_boot:
+      guest: '{{ inventory_hostname }}'
+      boot: cdrom
+      image: '{{ image_dir }}/vm-noname.iso'
+    delegate_to: hypervisor
+
+  - name: Clean up temporary directory
+    file:
+      dest: '{{ tempdir.stdout }}'
+      state: absent
+    transport: local
+
+  - name: Wait for anaconda to start
+    wait_for:
+      host: '{{ ansible_ssh_host }}'
+      port: 22
+      state: started
+      timeout: 360
+    delegate_to: hypervisor
+
+  - name: Wait for the kickstart to finish
+    wait_for:
+      host: '{{ ansible_ssh_host }}'
+      port: 22
+      state: stopped
+      timeout: 600
+    delegate_to: hypervisor
+
+  - name: Wait for the system to power off
+    virt:
+      guest: '{{ inventory_hostname }}'
+      command: status
+    register: result
+    until: result.status == 'shutdown'
+    retries: 10
+    delay: 5
+    delegate_to: hypervisor
+
+  - name: Disable boot from ISO
+    virt_boot:
+      guest: '{{ inventory_hostname }}'
+      boot: hd
+    delegate_to: hypervisor
+
+  - name: Wait for the reboot
+    wait_for:
+      host: '{{ ansible_ssh_host }}'
+      port: 22
+      state: started
+      timeout: 60
+    delegate_to: hypervisor
+
+#  - name: Configure CentOS mirror
+#    template:
+#      src: templates/etc/yum.repos.d/CentOS-Base.repo
+#      dest: /etc/yum.repos.d/
+
+#  - name: Install EPEL
+#    shell: rpm -ivh http://epel.mirror.nucleus.be/{{ os_version }}/{{ os_arch }}/epel-release-6-8.noarch.rpm
+
+#  - name: Install packages
+#    yum:
+#      pkg: {{ item }}
+#      enablerepo: epel-testing
+#      state: installed
+#    with_items:
+#    - ansible
+#    - git
+
+#  - name: Update system
+#    yum: pkg=* state=latest
+
+  - name: Power off
+    shell: poweroff
+    ignore_errors: True
+
+  - name: Grace time for poweroff
+    pause:
+      seconds: 10
+
+  - name: Download VM Qcow2 image
+    fetch:
+      src: '{{ image_dir }}/{{ inventory_hostname }}.qcow2'
+      dest: '{{ inventory_hostname }}.qcow2.img'
+      flat: yes
+    delegate_to: hypervisor

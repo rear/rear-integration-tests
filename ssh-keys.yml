@@ -1,0 +1,3 @@
+authorized_ssh_keys:
+  - "{{ lookup('file', '../ssh-keys/dwieers.pub') }}"
+  - "{{ lookup('file', '../ssh-keys/jhoekx.pub') }}"
