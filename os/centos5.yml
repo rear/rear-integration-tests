@@ -8,7 +8,7 @@
   - setup:
 
 - name: Create virtual images for Workshop
-  hosts: os-centos5
+  hosts: rear-centos5
   remote_user: root
   gather_facts: no
 
