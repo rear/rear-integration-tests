@@ -104,7 +104,7 @@
       command: status
     register: result
     until: result.status == 'shutdown'
-    retries: 100
+    retries: 150
     delay: 5
     delegate_to: hypervisor
 
