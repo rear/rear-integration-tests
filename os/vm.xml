@@ -32,10 +32,12 @@
 
     <devices>
         <disk type='block' device='disk'>
-            <driver name='qemu' type='qcow2' cache='writeback'/>
+            <driver name='qemu' type='qcow2' cache='writeback' discard='unmap'/>
             <source dev='{{ image_dir }}/{{ inventory_hostname }}.qcow2'/>
-            <target dev='vda' bus='virtio'/>
+            <target dev='vda' bus='scsi'/>
+            <address type='drive' controller='0' bus='0' target='0' unit='0'/>
         </disk>
+        <controller type='scsi' index='0' model='virtio-scsi'/>
 
         <disk type='file' device='cdrom'>
             <driver name='qemu' type='raw' cache='none'/>
