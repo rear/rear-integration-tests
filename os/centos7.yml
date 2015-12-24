@@ -18,8 +18,8 @@
     os_arch: x86_64
     centos_mirror: http://centos.cu.be/
     image_dir: /var/lib/libvirt/images
-    boot_iso: '{{ os_name }}{{ os_version }}.iso'
-    vm_image: '{{ os_name }}{{ os_version }}.qcow2.img'
+    boot_iso: '{{ os_name}}{{ os_version}}/{{ os_name }}{{ os_version }}-{{ os_arch }}.iso'
+    vm_image: '{{ os_name}}{{ os_version}}/{{ os_name }}{{ os_version }}-{{ os_arch }}.qcow2.img'
 
   vars_files:
     - ../ssh-keys.yml
@@ -36,13 +36,13 @@
 
   - name: Template kickstart file
     template:
-      src: centos7/ks.cfg
+      src: '{{ os_name }}{{ os_version }}/ks.cfg'
       dest: '{{ tempdir.stdout }}/ks.cfg'
     transport: local
 
   - name: Template syslinux bootloader config
     template:
-      src: centos7/isolinux.cfg
+      src: '{{ os_name }}{{ os_version }}/isolinux.cfg'
       dest: '{{ tempdir.stdout }}/isolinux.cfg'
     transport: local
 
@@ -150,7 +150,7 @@
       command: status
     register: result
     until: result.status == 'shutdown'
-    retries: 20
+    retries: 30
     delay: 5
     delegate_to: hypervisor
 
