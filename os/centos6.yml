@@ -128,31 +128,32 @@
     virt_boot:
       guest: '{{ inventory_hostname }}'
       boot: hd
+      start: no
     delegate_to: hypervisor
 
-  - name: Wait for the reboot
-    wait_for:
-      host: '{{ ansible_ssh_host }}'
-      port: 22
-      state: started
-      timeout: 60
-    delegate_to: hypervisor
+#  - name: Wait for the reboot
+#    wait_for:
+#      host: '{{ ansible_ssh_host }}'
+#      port: 22
+#      state: started
+#      timeout: 60
+#    delegate_to: hypervisor
 
   ### TODO: Modify the image to our needs here
 
   ### TODO: We have to use a 1min delay otherwise Ansible on CentOS 7 bails out
-  - name: Power off
-    raw: shutdown -P +1 "Shutting down system for image"
+#  - name: Power off
+#    raw: shutdown -P +1 "Shutting down system for image"
 
-  - name: Wait for the system to power off
-    virt:
-      guest: '{{ inventory_hostname }}'
-      command: status
-    register: result
-    until: result.status == 'shutdown'
-    retries: 30
-    delay: 5
-    delegate_to: hypervisor
+#  - name: Wait for the system to power off
+#    virt:
+#      guest: '{{ inventory_hostname }}'
+#      command: status
+#    register: result
+#    until: result.status == 'shutdown'
+#    retries: 30
+#    delay: 5
+#    delegate_to: hypervisor
 
   - name: Download VM Qcow2 image
     fetch:
