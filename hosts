@@ -1,4 +1,4 @@
 hypervisor ansible_ssh_host=192.168.122.1 ansible_python_interpreter=/usr/bin/python2
-os-centos5 ansible_ssh_host=192.168.122.15 hypervisor=192.168.122.1
-os-centos6 ansible_ssh_host=192.168.122.16 hypervisor=192.168.122.1
-os-centos7 ansible_ssh_host=192.168.122.17 hypervisor=192.168.122.1
+rear-centos5 ansible_ssh_host=192.168.122.15 hypervisor=192.168.122.1
+rear-centos6 ansible_ssh_host=192.168.122.16 hypervisor=192.168.122.1
+rear-centos7 ansible_ssh_host=192.168.122.17 hypervisor=192.168.122.1
