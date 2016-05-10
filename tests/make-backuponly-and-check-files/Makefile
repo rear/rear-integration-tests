@@ -53,7 +53,7 @@ $(METADATA): Makefile
 	@echo "Type:            Sanity" >> $(METADATA)
 	@echo "TestTime:        60m" >> $(METADATA)
 	@echo "RunFor:          rear" >> $(METADATA)
-	@echo "Requires:        rear nfs" >> $(METADATA)
+	@echo "Requires:        rear nfs beakerlib" >> $(METADATA)
 	@echo "Priority:        Normal" >> $(METADATA)
 	@echo "License:         GPLv2+" >> $(METADATA)
 	@echo "Confidential:    no" >> $(METADATA)

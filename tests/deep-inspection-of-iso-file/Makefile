@@ -53,7 +53,7 @@ $(METADATA): Makefile
 	@echo "Type:            Sanity" >> $(METADATA)
 	@echo "TestTime:        10m" >> $(METADATA)
 	@echo "RunFor:          rear" >> $(METADATA)
-	@echo "Requires:        rear lftp syslinux mkisofs" >> $(METADATA)
+	@echo "Requires:        rear lftp syslinux mkisofs beakerlib" >> $(METADATA)
 	@echo "Bug:             1059196 981637 1309597 1267469" >> $(METADATA)
 	@echo "Priority:        Normal" >> $(METADATA)
 	@echo "License:         GPLv2+" >> $(METADATA)

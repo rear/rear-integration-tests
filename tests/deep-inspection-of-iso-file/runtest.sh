@@ -29,11 +29,13 @@
 . /usr/bin/rhts-environment.sh || exit 1
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-PACKAGE="rear"
+PACKAGE_REAR="rear"
+PACKAGE_BEAKERLIB="beakerlib"
 
 rlJournalStart
     rlPhaseStartSetup
-        rlAssertRpm $PACKAGE
+        rlAssertRpm $PACKAGE_REAR
+        rlAssertRpm $PACKAGE_BEAKERLIB
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         cp root.files $TmpDir/.
         rlRun "pushd $TmpDir"
