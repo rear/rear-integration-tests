@@ -28,7 +28,7 @@
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-PACKAGES="rear syslinux-extlinux"
+PACKAGES="rear syslinux-extlinux syslinux-nonlinux xorriso"
 REAR_LABEL="${REAR_LABEL:-REAR-000}"
 REAR_LABEL_PATH="/dev/disk/by-label/$REAR_LABEL"
 HOSTNAME_SHORT="$(hostname --short)"
@@ -60,9 +60,12 @@ check_and_submit_rear_log() {
     rlFileSubmit $path "rear-$1.log"
 }
 
+ROOT_DISK=$(df -hT | grep /$ | awk '{print $1}')
+
 REAR_BIN="/usr/sbin/rear"
 REAR_CONFIG="/etc/rear/local.conf"
 REAR_HOME_DIRECTORY="/root"
+REAR_ISO_OUTPUT="/var/lib/rear/output"
 
 rlJournalStart
     if [ "$REBOOTCOUNT" -eq 0 ]; then
@@ -79,7 +82,7 @@ BACKUP_URL=iso:///backup
 OUTPUT_URL=null
 USER_INPUT_TIMEOUT=10
 # 4gb backup limit
-PRE_RECOVERY_SCRIPT=(\"mkdir /tmp/mnt;\" \"mount /dev/vda2 /tmp/mnt/;\" \"modprobe loop;\" \"dd if=/tmp/mnt/root/rear/var/lib/rear/output/rear-fedora.iso of=/dev/cdrom;\" \"umount /tmp/mnt/;\")
+PRE_RECOVERY_SCRIPT=(\"mkdir /tmp/mnt;\" \"mount $ROOT_DISK /tmp/mnt/;\" \"modprobe brd rd_nr=1 rd_size=2097152;\" \"dd if=/tmp/mnt/var/lib/rear/output/rear-$HOSTNAME_SHORT.iso of=/dev/ram0;\" \"umount /tmp/mnt/;\")
 ISO_FILE_SIZE_LIMIT=4294967296
 ISO_DEFAULT=automatic
 ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
@@ -94,7 +97,7 @@ ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
 
         rlPhaseStartTest "Run rear mkbackup"
             rlRun -l "$REAR_BIN -d mkbackup" \
-                0 "Creating backup to $REAR_LABEL_PATH"
+                0 "Creating backup to $REAR_ISO_OUTPUT"
             check_and_submit_rear_log mkbackup
             if ! rlGetPhaseState; then
                 rlDie "FATAL ERROR: $REAR_BIN -d mkbackup failed. See rear-mkbackup.log for details."
@@ -107,14 +110,17 @@ ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
             rlAssertExists $REAR_HOME_DIRECTORY/recovery_will_remove_me
         rlPhaseEnd
 
+        rlPhaseStartSetup "Make small iso file that is bootable by memdisk"
+            rlRun "xorriso -as mkisofs -r -V 'REAR-ISO' -J -J -joliet-long -cache-inodes -b isolinux/isolinux.bin -c isolinux/boot.cat -boot-load-size 4 -boot-info-table -no-emul-boot -eltorito-alt-boot -dev $REAR_ISO_OUTPUT/rear-$HOSTNAME_SHORT.iso -o $REAR_ISO_OUTPUT/small-rear.iso -- -rm_r backup"
+        rlPhaseEnd
+
         rlPhaseStartSetup "Force the machine to autoboot the ReaR rescue system"
-            rlLog "Setup GRUB"
+            rlRun "cp /usr/share/syslinux/memdisk /boot/" 0 "Copying memdisk"
             rlRun "echo 'menuentry \"ReaR-recover\" {
-  loopback loop (hd0,msdos2)/root/rear/var/lib/rear/output/rear-fedora.iso
-  linux (loop)/isolinux/kernel rw selinux=0 console=ttyS0,9600 console=tty0 auto_recover unattended
-  initrd (loop)/isolinux/initrd.cgz
+linux16 (hd0,msdos1)/memdisk iso raw
+initrd16 (hd0,msdos2)$REAR_ISO_OUTPUT/small-rear.iso
 }
-set default=\"ReaR-recover\"' >> /boot/grub2/grub.cfg"
+set default=\"ReaR-recover\"' >> /boot/grub2/grub.cfg" 0 "Setup GRUB"
         rlPhaseEnd
 
         rhts-reboot
