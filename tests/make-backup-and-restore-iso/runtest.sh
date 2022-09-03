@@ -83,6 +83,7 @@ rlJournalStart
         rlPhaseStartSetup "Create $REAR_CONFIG"
             rlFileBackup "$REAR_CONFIG"
             rlRun -l "echo 'OUTPUT=ISO
+SSH_FILES=no
 BACKUP=NETFS
 BACKUP_URL=iso:///backup
 OUTPUT_URL=null
