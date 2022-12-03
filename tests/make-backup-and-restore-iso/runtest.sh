@@ -4,7 +4,8 @@
 #
 #   runtest.sh of /CoreOS/rear/Sanity/make-backup-and-restore-bios
 #   Description: Test basic functionality of ReaR on systems with BIOS.
-#   Author: Lukáš Zaoral <lzaoral@redhat.com>
+#   Authors: Lukáš Zaoral <lzaoral@redhat.com>
+#            Anton Voznia <antoncty@gmail.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
