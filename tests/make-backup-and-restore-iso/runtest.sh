@@ -72,14 +72,14 @@ rlJournalStart
             rlAssertRpm --all
         rlPhaseEnd
 
-        rlPhaseStartSetup "Create /etc/rear/local.conf"
-            rlFileBackup "/etc/rear/local.conf"
+        rlPhaseStartSetup "Create $REAR_CONFIG"
+            rlFileBackup "$REAR_CONFIG"
             rlRun -l "echo 'OUTPUT=USB
 BACKUP=NETFS
 BACKUP_URL=usb://$REAR_LABEL_PATH
-USER_INPUT_TIMEOUT=10' | tee /etc/rear/local.conf" \
+USER_INPUT_TIMEOUT=10' | tee $REAR_CONFIG" \
                 0 "Creating basic configuration file"
-            rlAssertExists "/etc/rear/local.conf"
+            rlAssertExists "$REAR_CONFIG"
         rlPhaseEnd
 
         rlPhaseStartTest "Select and prepare (hd1) device"
@@ -107,34 +107,34 @@ USER_INPUT_TIMEOUT=10' | tee /etc/rear/local.conf" \
                 rlDie "FATAL ERROR: $REAR_ROOT does not exist."
             fi
 
-            rlRun -l "rear -d format -- -y $REAR_ROOT" \
+            rlRun -l "$REAR_BIN -d format -- -y $REAR_ROOT" \
                 0 "Partition and format $REAR_ROOT"
 
             rlAssertExists "$REAR_LABEL_PATH"
             check_and_submit_rear_log format
 
             if ! rlGetPhaseState; then
-                rlDie "FATAL ERROR: rear -d format -- -y $REAR_ROOT failed. See rear-format.log for details."
+                rlDie "FATAL ERROR: $REAR_BIN -d format -- -y $REAR_ROOT failed. See rear-format.log for details."
             fi
 
-            rlRun -l "lsblk | tee drive_layout.old" \
+            rlRun -l "lsblk | tee $REAR_HOME_DIRECTORY/drive_layout.old" \
                 0 "Store lsblk output in recovery image"
-            rlAssertExists drive_layout.old
+            rlAssertExists $REAR_HOME_DIRECTORY/drive_layout.old
         rlPhaseEnd
 
         rlPhaseStartTest "Run rear mkbackup"
-            rlRun -l "rear -d mkbackup" \
+            rlRun -l "$REAR_BIN -d mkbackup" \
                 0 "Creating backup to $REAR_LABEL_PATH"
             check_and_submit_rear_log mkbackup
             if ! rlGetPhaseState; then
-                rlDie "FATAL ERROR: rear -d mkbackup failed. See rear-mkbackup.log for details."
+                rlDie "FATAL ERROR: $REAR_BIN -d mkbackup failed. See rear-mkbackup.log for details."
             fi
         rlPhaseEnd
 
         rlPhaseStartSetup "Create dummy file"
-            rlRun "touch recovery_will_remove_me" \
+            rlRun "touch $REAR_HOME_DIRECTORY/recovery_will_remove_me" \
                 0 "Create dummy file to be removed by recovery"
-            rlAssertExists recovery_will_remove_me
+            rlAssertExists $REAR_HOME_DIRECTORY/recovery_will_remove_me
         rlPhaseEnd
 
         # TODO: should be configurable in /etc/rear/local.conf!!!
@@ -260,18 +260,18 @@ LABEL rear
     elif [ "$REBOOTCOUNT" -eq 1 ]; then
         # ReaR hopefully recovered the OS
         rlPhaseStartTest "Assert that the recovery was successful"
-            rlAssertNotExists recovery_will_remove_me
+            rlAssertNotExists $REAR_HOME_DIRECTORY/recovery_will_remove_me
 
-            rlAssertExists drive_layout.old
+            rlAssertExists $REAR_HOME_DIRECTORY/drive_layout.old
             rlAssertExists /root/rear*.log
 
             # check that ReaR did not overwrite itself
             rlAssertExists "$REAR_LABEL_PATH"
 
-            rlRun -l "lsblk | tee drive_layout.new" \
+            rlRun -l "lsblk | tee $REAR_HOME_DIRECTORY/drive_layout.new" \
                 0 "Get current lsblk output"
-            if ! rlAssertNotDiffer drive_layout.old drive_layout.new; then
-                rlRun -l "diff -u drive_layout.old drive_layout.new" \
+            if ! rlAssertNotDiffer $REAR_HOME_DIRECTORY/drive_layout.{old,new}; then
+                rlRun -l "diff -u $REAR_HOME_DIRECTORY/drive_layout.{old,new}" \
                     1 "Diff drive layout changes"
             fi
 
@@ -280,7 +280,7 @@ LABEL rear
 
         rlPhaseStartCleanup
             rlFileRestore
-            rlRun "rm -f drive_layout.{old,new}" 0 "Remove lsblk outputs"
+            rlRun "rm -f $REAR_HOME_DIRECTORY/drive_layout.{old,new}" 0 "Remove lsblk outputs"
             rlRun "rm -rf /root/rear*.log /var/log/rear/*" 0 "Remove ReaR logs"
         rlPhaseEnd
 
