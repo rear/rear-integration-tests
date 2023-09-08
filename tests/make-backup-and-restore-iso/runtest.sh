@@ -77,7 +77,9 @@ rlJournalStart
             rlRun -l "echo 'OUTPUT=USB
 BACKUP=NETFS
 BACKUP_URL=usb://$REAR_LABEL_PATH
-USER_INPUT_TIMEOUT=10' | tee $REAR_CONFIG" \
+USER_INPUT_TIMEOUT=10
+ISO_DEFAULT=automatic
+ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
                 0 "Creating basic configuration file"
             rlAssertExists "$REAR_CONFIG"
         rlPhaseEnd
