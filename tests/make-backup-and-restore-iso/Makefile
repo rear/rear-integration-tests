@@ -1,12 +1,13 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Makefile of /CoreOS/rear/Sanity/make-backup-and-restore-bios
-#   Description: Test basic functionality of ReaR on systems with BIOS.
-#   Author: Lukáš Zaoral <lzaoral@redhat.com>
+#   Makefile of /CoreOS/rear/Sanity/make-backup-and-restore-iso
+#   Description: Test basic functionality of ReaR on systems with BIOS using bootable ISO image
+#   Authors: Lukáš Zaoral <lzaoral@redhat.com>
+#            Pavel Cahyna <pcahyna@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2021 - 2022 Red Hat, Inc.
+#   Copyright (c) 2021 - 2023 Red Hat, Inc.
 #
 #   This program is free software: you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -23,7 +24,7 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-export TEST=/CoreOS/rear/Sanity/make-backup-and-restore-bios
+export TEST=/CoreOS/rear/Sanity/make-backup-and-restore-iso
 export TESTVERSION=1.0
 
 BUILT_FILES=
@@ -45,11 +46,11 @@ clean:
 include /usr/share/rhts/lib/rhts-make.include
 
 $(METADATA): Makefile
-	@echo "Owner:           Lukáš Zaoral <lzaoral@redhat.com>" > $(METADATA)
+	@echo "Owner:           Pavel Cahyna <pcahyna@redhat.com>" > $(METADATA)
 	@echo "Name:            $(TEST)" >> $(METADATA)
 	@echo "TestVersion:     $(TESTVERSION)" >> $(METADATA)
 	@echo "Path:            $(TEST_DIR)" >> $(METADATA)
-	@echo "Description:     Test basic functionality of ReaR on systems with BIOS." >> $(METADATA)
+	@echo "Description:     Test basic functionality of ReaR on systems with BIOS using bootable ISO image" >> $(METADATA)
 	@echo "Type:            Sanity" >> $(METADATA)
 	@echo "TestTime:        2h" >> $(METADATA)
 	@echo "RunFor:          rear" >> $(METADATA)
@@ -58,5 +59,6 @@ $(METADATA): Makefile
 	@echo "License:         GPLv2+" >> $(METADATA)
 	@echo "Confidential:    no" >> $(METADATA)
 	@echo "Destructive:     no" >> $(METADATA)
+	@echo "Architectures:   x86_64" >> $(METADATA)
 
 	rhts-lint $(METADATA)

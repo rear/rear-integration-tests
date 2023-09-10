@@ -2,14 +2,14 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   runtest.sh of /CoreOS/rear/Sanity/make-backup-and-restore-bios
-#   Description: Test basic functionality of ReaR on systems with BIOS.
+#   runtest.sh of /CoreOS/rear/Sanity/make-backup-and-restore-iso
+#   Description: Test basic functionality of ReaR on systems with BIOS using bootable ISO image
 #   Authors: Lukáš Zaoral <lzaoral@redhat.com>
 #            Anton Voznia <antoncty@gmail.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2021 - 2022 Red Hat, Inc.
+#   Copyright (c) 2021 - 2023 Red Hat, Inc.
 #
 #   This program is free software: you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
