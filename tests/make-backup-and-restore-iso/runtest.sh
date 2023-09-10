@@ -81,6 +81,17 @@ rlJournalStart
             rlAssertRpm --all
         rlPhaseEnd
 
+        # Configure ReaR for ISO output.
+        # Backup will be embedded in the ISO. Since the ISO is not written/burned
+        # to any disk, but merely loaded into RAM by the bootloader (memdisk - see below),
+        # it will not be accessible in the rescue system after it boots. We need it
+        # for restoring the backup which is located there, though.
+        # For this reason we load it into a RAM disk from the original system's root
+        # filesystem, before ReaR starts wiping the disk. The backup content then survives
+        # in the RAM disk.
+        # Creation of the RAM disk, mounting of the root filesystem
+        # and populating the RAM disk with the ISO image is achieved by the
+        # PRE_RECOVERY_SCRIPT.
         rlPhaseStartSetup "Create $REAR_CONFIG"
             rlFileBackup "$REAR_CONFIG"
             rlRun -l "echo 'OUTPUT=ISO
@@ -119,12 +130,27 @@ ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
             rlAssertExists $REAR_HOME_DIRECTORY/recovery_will_remove_me
         rlPhaseEnd
 
+        # We want to boot the resulting ISO by loading it into RAM by a bootloader
+        # (memdisk) and chainloading its bootloader. This will test proper boot
+        # functionality of the ISO image, in addition to testing the rescue ramdisk.
+        # The iso is rather big, however. Let's make a smaller copy that excludes the backup
+        # (backup.tar.gz). This will reduce memory usage by memdisk and prevent
+        # possible boot issues where the complete ISO would not fit into RAM.
         rlPhaseStartSetup "Make small iso file that is bootable by memdisk"
             rlRun "xorriso -as mkisofs -r -V 'REAR-ISO' -J -J -joliet-long -cache-inodes -b isolinux/isolinux.bin -c isolinux/boot.cat -boot-load-size 4 -boot-info-table -no-emul-boot -eltorito-alt-boot -dev $REAR_ISO_OUTPUT/rear-$HOSTNAME_SHORT.iso -o $REAR_ISO_OUTPUT/rear-rescue-only.iso -- -rm_r backup"
         rlPhaseEnd
 
+        # memdisk is a special bootloader, part of Syslinux. It is booted
+        # using the Linux kernel protocol, with itself as the kernel and a disk image
+        # as the initrd. It then chainloads the disk image (hands off control
+        # to the bootloader in the disk image). This way we can test a bootable disk
+        # by emulating it - without having a second disk drive.
         rlPhaseStartSetup "Force the machine to autoboot the ReaR rescue system"
             rlRun "cp /usr/share/syslinux/memdisk /boot/" 0 "Copying memdisk"
+            # memdisk itself will be booted from our system's GRUB - we change grub.cfg
+            # to load memdisk on reboot.
+            # The complete boot sequence is thus:
+            # GRUB -> memdisk -> bootloader of the ReaR ISO image
             rlRun "echo 'search --no-floppy --fs-uuid --set=bootfs $BOOT_FS_UUID
 search --no-floppy --fs-uuid --set=rootfs $ROOT_FS_UUID
 terminal_input serial
