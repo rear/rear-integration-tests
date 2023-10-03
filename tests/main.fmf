@@ -1,0 +1,2 @@
+test: ./runtest.sh
+framework: beakerlib

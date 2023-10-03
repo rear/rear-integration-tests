@@ -1,0 +1,9 @@
+summary: 'Test basic functionality of ReaR on systems with BIOS using bootable ISO image'
+
+require:
+    - rear
+    - syslinux-extlinux
+    - syslinux-nonlinux
+    - xorriso
+
+duration: 30m
