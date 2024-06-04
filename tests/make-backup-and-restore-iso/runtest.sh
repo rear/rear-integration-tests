@@ -154,11 +154,12 @@ ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
             # to load memdisk on reboot.
             # The complete boot sequence is thus:
             # GRUB -> memdisk -> bootloader of the ReaR ISO image
-            rlRun "echo 'search --no-floppy --fs-uuid --set=bootfs $BOOT_FS_UUID
-search --no-floppy --fs-uuid --set=rootfs $ROOT_FS_UUID
+            rlRun "echo '
 terminal_input serial
 terminal_output serial
 menuentry \"ReaR-recover\" {
+search --no-floppy --fs-uuid --set=bootfs $BOOT_FS_UUID
+search --no-floppy --fs-uuid --set=rootfs $ROOT_FS_UUID
 linux16 (\$bootfs)$BOOT_PATH/memdisk iso raw
 initrd16 (\$rootfs)$ROOT_PATH/$REAR_ISO_OUTPUT/rear-rescue-only.iso
 }
