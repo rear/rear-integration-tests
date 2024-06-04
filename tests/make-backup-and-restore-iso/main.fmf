@@ -7,4 +7,4 @@ require:
     - xorriso
     - dosfstools
 
-duration: 30m
+duration: 20m
