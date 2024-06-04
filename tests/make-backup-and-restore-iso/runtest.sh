@@ -72,7 +72,9 @@ ROOT_DISK=$(df -hT | grep /$ | awk '{print $1}')
 REAR_BIN="/usr/sbin/rear"
 REAR_CONFIG="/etc/rear/local.conf"
 REAR_HOME_DIRECTORY="/root"
-REAR_ISO_OUTPUT="/var/lib/rear/output"
+REAR_ISO_FHSDIR="/var/lib"
+REAR_ISO_SUBDIR="rear/output"
+REAR_ISO_OUTPUT="$REAR_ISO_FHSDIR/$REAR_ISO_SUBDIR"
 
 rlJournalStart
     if [ "$REBOOTCOUNT" -eq 0 ]; then
