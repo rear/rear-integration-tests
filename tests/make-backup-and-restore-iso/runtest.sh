@@ -61,18 +61,23 @@ check_and_submit_rear_log() {
     rlFileSubmit $path "rear-$1.log"
 }
 
-ROOT_PATH=$(grub2-mkrelpath /)
-BOOT_PATH=$(grub2-mkrelpath /boot)
-BOOT_FS_UUID=$(grub2-probe --target=fs_uuid /boot)
-ROOT_FS_UUID=$(grub2-probe --target=fs_uuid /)
-
-
-ROOT_DISK=$(df -hT | grep /$ | awk '{print $1}')
-
 REAR_BIN="/usr/sbin/rear"
 REAR_CONFIG="/etc/rear/local.conf"
 REAR_HOME_DIRECTORY="/root"
-REAR_ISO_OUTPUT="/var/lib/rear/output"
+REAR_ISO_FHSDIR="/var/lib"
+REAR_ISO_SUBDIR="rear/output"
+REAR_ISO_OUTPUT="$REAR_ISO_FHSDIR/$REAR_ISO_SUBDIR"
+
+OUTPUT_PATH=$(grub2-mkrelpath "$REAR_ISO_FHSDIR")/$REAR_ISO_SUBDIR
+BOOT_PATH=$(grub2-mkrelpath /boot)
+BOOT_FS_UUID=$(grub2-probe --target=fs_uuid /boot)
+OUTPUT_FS_UUID=$(grub2-probe --target=fs_uuid "$REAR_ISO_FHSDIR")
+OUTPUT_DISK=$(findmnt -v -o source -n --target "$REAR_ISO_FHSDIR" || grub2-probe --target=device "$REAR_ISO_FHSDIR")
+OUTPUT_SUBVOL=$(findmnt -n -o fsroot --target "$REAR_ISO_FHSDIR")
+if [ "$OUTPUT_SUBVOL" == / ] ; then
+    OUTPUT_SUBVOL=""
+fi
+OUTPUT_FS_PATH=${REAR_ISO_FHSDIR##$(findmnt -n -o target --target "$REAR_ISO_FHSDIR")}/$REAR_ISO_SUBDIR
 
 rlJournalStart
     if [ "$REBOOTCOUNT" -eq 0 ]; then
@@ -102,7 +107,7 @@ BACKUP_URL=iso:///backup
 OUTPUT_URL=null
 USER_INPUT_TIMEOUT=10
 # 4gb backup limit
-PRE_RECOVERY_SCRIPT=(\"mkdir /tmp/mnt;\" \"mount $ROOT_DISK /tmp/mnt/;\" \"modprobe brd rd_nr=1 rd_size=2097152;\" \"dd if=/tmp/mnt/$ROOT_PATH/var/lib/rear/output/rear-$HOSTNAME_SHORT.iso of=/dev/ram0;\" \"umount /tmp/mnt/;\")
+PRE_RECOVERY_SCRIPT=(\"mkdir /tmp/mnt;\" \"mount $OUTPUT_DISK ${OUTPUT_SUBVOL:+-o subvol=${OUTPUT_SUBVOL}} /tmp/mnt/;\" \"modprobe brd rd_nr=1 rd_size=2097152;\" \"dd if=/tmp/mnt/$OUTPUT_FS_PATH/rear-$HOSTNAME_SHORT.iso of=/dev/ram0;\" \"umount /tmp/mnt/;\")
 ISO_FILE_SIZE_LIMIT=4294967296
 ISO_DEFAULT=automatic
 ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
@@ -152,19 +157,20 @@ ISO_RECOVER_MODE=unattended' | tee $REAR_CONFIG" \
             # to load memdisk on reboot.
             # The complete boot sequence is thus:
             # GRUB -> memdisk -> bootloader of the ReaR ISO image
-            rlRun "echo 'search --no-floppy --fs-uuid --set=bootfs $BOOT_FS_UUID
-search --no-floppy --fs-uuid --set=rootfs $ROOT_FS_UUID
+            rlRun "echo '
 terminal_input serial
 terminal_output serial
 menuentry \"ReaR-recover\" {
+search --no-floppy --fs-uuid --set=bootfs $BOOT_FS_UUID
+search --no-floppy --fs-uuid --set=outputfs $OUTPUT_FS_UUID
 linux16 (\$bootfs)$BOOT_PATH/memdisk iso raw
-initrd16 (\$rootfs)$ROOT_PATH/$REAR_ISO_OUTPUT/rear-rescue-only.iso
+initrd16 (\$outputfs)$OUTPUT_PATH/rear-rescue-only.iso
 }
 set default=\"ReaR-recover\"' >> /boot/grub2/grub.cfg" 0 "Setup GRUB"
         rlPhaseEnd
 
         if test "$TMT_REBOOT_COUNT"; then
-            rlRun "tmt-reboot -t 1200" 0 "Reboot the machine"
+            rlRun "tmt-reboot -t 900" 0 "Reboot the machine"
         else
             # not running from TMT
             rhts-reboot
